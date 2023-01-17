@@ -5,7 +5,9 @@ import 'modules/forms/forms_module.dart';
 
 class AppModule extends Module {
   @override
-  final List<Bind> binds = [];
+  final List<Bind> binds = [
+    ...FormsModule.exports,
+  ];
 
   @override
   final List<ModularRoute> routes = [
