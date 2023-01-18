@@ -25,17 +25,22 @@ class _UserPageState extends State<UserPage> {
   }
 
   Widget _buildButton() {
-    return Container(
-      width: double.infinity,
-      height: 48,
-      decoration: BoxDecoration(
-        color: isValid ? PodiColors.purple : PodiColors.purple.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          "PARTICIPAR",
-          style: PodiTexts.body1.weightSemibold.withColor(PodiColors.white),
+    return InkWell(
+      onTap: isValid ? () {
+        Modular.to.pushReplacementNamed(PodiPages.questionPage());
+      } : null,
+      child: Container(
+        width: double.infinity,
+        height: 48,
+        decoration: BoxDecoration(
+          color: isValid ? PodiColors.purple : PodiColors.purple.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            "PARTICIPAR",
+            style: PodiTexts.body1.weightSemibold.withColor(PodiColors.white),
+          ),
         ),
       ),
     );
