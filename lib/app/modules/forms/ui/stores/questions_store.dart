@@ -1,4 +1,6 @@
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:mobx/mobx.dart';
+import 'package:workshop_app/app/shared/utils.dart';
 
 import '../../infra/models/choice_model.dart';
 part 'questions_store.g.dart';
@@ -19,10 +21,19 @@ abstract class _QuestionsStoreBase with Store {
   ];
 
   @action
-  void changeChoice(String char) => choice = char;
+  void changeChoice(String char) {
+    choice = char;
+    sentChoice = false;
+  }
 
   @action
-  void sendChoice() => sentChoice = true;
+  void sendChoice() {
+    sentChoice = true;
+    final valid = choices.firstWhere((element) => element.char == choice).isCorrect;
+    if(valid) {
+      Modular.to.pushReplacementNamed(PodiPages.wheelPage());
+    }
+  }
 
   @computed 
   bool get verifyChoice {

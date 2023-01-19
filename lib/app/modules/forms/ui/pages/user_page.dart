@@ -5,6 +5,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:workshop_app/app/modules/forms/ui/stores/user_store.dart';
 import 'package:workshop_app/app/shared/utils.dart';
 
+import '../../../prizes/ui/stores/wheel_stores.dart';
+
 class UserPage extends StatefulWidget {
   const UserPage({super.key});
 
@@ -14,6 +16,7 @@ class UserPage extends StatefulWidget {
 
 class _UserPageState extends State<UserPage> {
   final store = Modular.get<UserStore>();
+  final wheelStore = Modular.get<WheelStore>();
   final _formKey = GlobalKey<FormState>();
 
   bool isValid = false;
@@ -21,6 +24,7 @@ class _UserPageState extends State<UserPage> {
   @override
   void initState() {
     store.changeName(null);
+    wheelStore.fetchGifts();
     super.initState();
   }
 
