@@ -16,12 +16,22 @@ class WheelPage extends StatefulWidget {
   State<WheelPage> createState() => _WheelPageState();
 }
 
-class _WheelPageState extends State<WheelPage> {
+class _WheelPageState extends State<WheelPage> 
+with SingleTickerProviderStateMixin {
   final store = Modular.get<WheelStore>();
+
+  late Animation<Color?> colorTween;
 
   @override
   void initState() {
-    store.fetchGifts();
+    store.colorTweenController = AnimationController(vsync: this, duration: kThemeChangeDuration);
+    colorTween = ColorTween(
+      begin: PodiColors.green,
+      end: PodiColors.warning[400],
+    ).animate(store.colorTweenController!);
+    colorTween.addListener(() {setState(() {
+      
+    });});
     super.initState();
   }
 
@@ -52,7 +62,88 @@ class _WheelPageState extends State<WheelPage> {
       ));
     }
 
-    return correctAnswer();
+    Widget showResult() {
+      final sizeFactor = (MediaQuery.of(context).size.width - 96) / 280;
+      return Stack(
+        children: [
+          Positioned(
+            left: 48,
+            right: 48,
+            child: SvgPicture.asset(
+              store.selectedGift != null
+                  ? PodiIcons.backgroundStarsSuccess
+                  : PodiIcons.backgroundStarsFail,
+              height: sizeFactor * 280,
+              width: sizeFactor * 280,
+            ),
+          ),
+          Positioned(
+            left: 32,
+            right: 32,
+            top: sizeFactor * (store.selectedGift != null ? 76 : 48),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (store.selectedGift == null) ...[
+                  Image.asset(
+                    PodiIcons.failEmoji,
+                    height: sizeFactor * 186,
+                  ),
+                  Text(
+                    "Ops!",
+                    style: PodiTexts.heading5.weightBold,
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  Text(
+                    "Azar no jogo sorte no amor.\nConvide alguém para jantar.",
+                    textAlign: TextAlign.center,
+                    style: PodiTexts.body1,
+                  ),
+                ] else
+                  ...[
+                    Container(
+                      height: sizeFactor * 128,
+                      width: sizeFactor * 128,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: PodiColors.white,
+                      ),
+                      foregroundDecoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        image: DecorationImage(
+                          fit: BoxFit.cover,
+                          image: NetworkImage(store.selectedGift!.photo),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16,),
+                    Text(
+                    "Wow, você ganhou!",
+                    style: PodiTexts.heading5.weightBold.withColor(PodiColors.white),
+                  ),
+                  const SizedBox(
+                    height: 8,
+                  ),
+                  Text(
+                    "Hoje foi seu dia de sorte, toque em avançar para ver como resgatar seu prêmio.",
+                    textAlign: TextAlign.center,
+                    style: PodiTexts.body1.withColor(PodiColors.white),
+                  ),
+                  ],
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return AnimatedOpacity(
+      opacity: store.drawing ? 0 : 1,
+      duration: kThemeChangeDuration,
+      child: !store.didDraw || store.drawing ? correctAnswer() : showResult(),
+      );
   }
 
   Widget _buildWheel() {
@@ -66,43 +157,50 @@ class _WheelPageState extends State<WheelPage> {
           alignment: const Alignment(0, -0.625),
         ),
       ],
-      items: store.gifts
-          .map(
-            (e) => FortuneItem(
-              child: Text(
-                e.name,
-                style:
-                    PodiTexts.heading5.weightBold.withColor(PodiColors.white),
-              ),
-              style: FortuneItemStyle(
-                circleRatio: 0.4,
-                axis: Axis.horizontal,
-                color: PodiColors.purple,
-                borderWidth: 0,
-                gradient: LinearGradient(
-                  colors: [PodiColors.purple[300]!, PodiColors.purple[600]!],
-                ),
-              ),
-            ),
-          )
-          .toList(),
+      items: store.wheelItems,
+      animateFirst: false,
+      onAnimationStart: () {
+        store.start();
+      },
+      onAnimationEnd: () {
+        store.endDrawing();
+      },
+      onFling: store.draw,
+      selected: store.stream,
     );
   }
 
   Widget _buildButton() {
-    return ElevatedButton(
-      onPressed: () {},
-      child: Text(
-        "GIRAR ROLETA",
-        style: PodiTexts.body1.weightBold,
-      ),
-      style: BasicButtonStyle(
-        backgroundColor: PodiColors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return AnimatedOpacity(
+      duration: kThemeChangeDuration,
+      opacity: store.drawing ? 0 : 1,
+      child: ElevatedButton(
+        onPressed: () {
+          if (store.drawing) return;
+          if (store.didDraw) {
+            if (store.didLose) {
+              Modular.to.pushReplacementNamed(PodiPages.userPage());
+            } else {}
+          } else {
+            store.draw();
+          }
+        },
+        child: Text(
+          store.didDraw
+              ? store.selectedGift != null
+                  ? "AVANÇAR"
+                  : "TENTAR NOVAMENTE"
+              : "GIRAR ROLETA",
+          style: PodiTexts.body1.weightBold,
         ),
-        padding: EdgeInsets.symmetric(horizontal: 24),
+        style: BasicButtonStyle(
+          backgroundColor: PodiColors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 24),
+        ),
       ),
     );
   }
@@ -144,9 +242,9 @@ class _WheelPageState extends State<WheelPage> {
   Widget build(BuildContext context) {
     return Observer(
       builder: (context) => Scaffold(
-        backgroundColor: PodiColors.green,
+        backgroundColor: colorTween.value,
         appBar: AppBar(
-          backgroundColor: PodiColors.green,
+          backgroundColor: colorTween.value,
           elevation: 0,
           centerTitle: true,
           title: SvgPicture.asset(PodiIcons.logoPodi, color: PodiColors.white),

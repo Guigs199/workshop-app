@@ -24,20 +24,28 @@ class _UserPageState extends State<UserPage> {
   @override
   void initState() {
     store.changeName(null);
-    wheelStore.fetchGifts();
+    pageFutures();
     super.initState();
+  }
+
+  Future<void> pageFutures() async {
+    await Future.wait([wheelStore.fetchGifts()]);
   }
 
   Widget _buildButton() {
     return InkWell(
-      onTap: isValid ? () {
-        Modular.to.pushReplacementNamed(PodiPages.questionPage());
-      } : null,
+      onTap: isValid
+          ? () {
+              Modular.to.pushReplacementNamed(PodiPages.questionPage());
+              wheelStore.fetchDraw();
+            }
+          : null,
       child: Container(
         width: double.infinity,
         height: 48,
         decoration: BoxDecoration(
-          color: isValid ? PodiColors.purple : PodiColors.purple.withOpacity(0.5),
+          color:
+              isValid ? PodiColors.purple : PodiColors.purple.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
